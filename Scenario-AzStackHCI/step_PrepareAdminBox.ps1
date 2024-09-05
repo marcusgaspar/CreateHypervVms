@@ -14,7 +14,7 @@ Start-Transcript "$tmppath\$logfile" -Append
 "(step_PrepareAdminBox.ps1) was run at $(Get-Date)"
 
 #region Set Ext IP Address
-    $externalAdapter = Get-NetAdapter $externalAdapterName | Get-NetAdapterAdvancedProperty
+    $externalAdapter = Get-NetAdapterAdvancedProperty | Where-Object { $_.DisplayValue -eq $externalAdapterName }
     $externalAdapterIP = $externalAdapterCIDR.Split('/')[0]
     $externalAdapterIPMask = $externalAdapterCIDR.Split('/')[1]
     Set-NetIPInterface -InterfaceAlias $externalAdapter.ifAlias -Dhcp Enabled -Verbose
@@ -66,13 +66,12 @@ Start-Process -FilePath net -ArgumentList "net start remoteaccess" -Wait -Verbos
     
     # Download the installer
     try {
-        $ErrorActionPreference = "Stop"
         "1st try to download WAC installer"
-        [System.Net.WebClient]::new().DownloadFile($WACInstallerUrl, $InstallerPath)
+        Invoke-WebRequest -Uri $WACInstallerUrl -OutFile $InstallerPath
     }
     catch {
         "2nd try to download WAC installer"
-        [System.Net.WebClient]::new().DownloadFile($WACInstallerUrl, $InstallerPath)
+        Invoke-WebRequest -Uri $WACInstallerUrl -OutFile $InstallerPath
     }
     
     # Install Windows Admin Center
@@ -89,7 +88,6 @@ Start-Process -FilePath net -ArgumentList "net start remoteaccess" -Wait -Verbos
     $ShortCut.Save()
     
 #endregion
-
 
 #region Install MMC tools
 "Installing MMC tools"
