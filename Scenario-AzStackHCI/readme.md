@@ -100,7 +100,8 @@ Last Successful Sync Time: 9/5/2024 3:45:06 PM
 Source: de.pool.ntp.org
 Poll Interval: 6 (64s)
 ```
-As we don't want to do additional time sync via Hyper-V I disabled 'Time synchronisation' in the VM creation process for the HCI nodes.
+As we don't want to do additional time sync via Hyper-V I disabled 'Time synchronisation' in the VM creation process for the HCI nodes.  
+![Time Synchronisation is now automatically disabled](./docs/DisableTimeSynchronisation.png)  
 
 ### 8. Onboard your AzStack HCI hosts to Azure using e.g.
 ```PowerShell
