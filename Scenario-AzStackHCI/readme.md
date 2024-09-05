@@ -6,8 +6,12 @@
 ![1DCand2NodesToPlayWith](./docs/3VMs.png)
 
 The deployment will create some VMs on your Hyper-V system:  
-![Overview](./docs/overview.png)
-
+![Overview](./docs/overview.png)  
+>Note: Make sure you have 2 virtual switches configured:
+>- a 'SetSwitch' that is hooked to physical adapter(s) that can talk to the internet
+>- an 'Internal' switch that is a private hyper-V switch only being used internally for the HCIs storage traffic.
+>(renaming is possible but you would need to be consistent in your 1_VMs.psd1 file)
+ 
 Once the deployment of HCI is done you will have something like this:  
 ![nested HCI internal](./docs/internal.png)
 
