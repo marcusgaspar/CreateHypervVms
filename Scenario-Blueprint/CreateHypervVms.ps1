@@ -314,12 +314,24 @@ foreach ($vm in $($vmConfig.GetEnumerator() | Sort-Object Name)) {
     New-VM -Name $vmName -MemoryStartupBytes $vmMemory -NoVHD  -Path $vmDirectory -Generation $vmGeneration | Set-VM -ProcessorCount $vmProcCount  -AutomaticStopAction $vmAutomaticStopAction 
 
     #region allow for nested virtualization
-    if ($vm.Value.ExposeVirtualizationExtensions)
-    {
+    if ($vm.Value.ExposeVirtualizationExtensions) {
         "...enabling nested virtualization..."
         Set-VMProcessor -VMName $vmName -ExposeVirtualizationExtensions $true
         Start-Sleep -Seconds 5
     }
+    #endregion
+
+    #region set VMIntegrationService if any
+    if ($null -ne $vm.Value.VMIntegrationService) {
+        "...setting VMIntegrationService config..."
+        $enable = [string]$(($vm.Value.VMIntegrationService.getenumerator() | Where-Object { $_.Value -eq $true }).name -join ',')
+        "enabling {0}" -f $enable
+        $enable -split ',' | ForEach-Object { Enable-VMIntegrationService $_ -VMName $vmName -Verbose }
+        $disable = [string]$(($vm.Value.VMIntegrationService.getenumerator() | Where-Object { $_.Value -eq $false }).name -join ',')
+        "disabling {0}" -f $disable
+        $disable -split ',' | ForEach-Object { Disable-VMIntegrationService $_ -VMName $vmName -Verbose }
+    }
+    Start-Sleep -Seconds 1
     #endregion
 
     #region VM's Network Adapters
@@ -409,10 +421,11 @@ foreach ($vm in $($vmConfig.GetEnumerator() | Sort-Object Name)) {
                 if (!([System.String]::IsNullOrEmpty($vmUnattendConfig[$vm.Name].'IPAddress'))) {
                     Get-UnattendSection 'specialize' 'Microsoft-Windows-TCPIP' $unattend | ForEach-Object { $_.Interfaces.Interface.UnicastIpAddresses.IpAddress.'#text' = $vmUnattendConfig[$vm.Name].IPAddress + "/" + $($vmUnattendConfig[$vm.Name].IPMask) };
                     
-                    if (!([System.String]::IsNullOrEmpty($vmUnattendConfig[$vm.Name].IPGateway))){
+                    if (!([System.String]::IsNullOrEmpty($vmUnattendConfig[$vm.Name].IPGateway))) {
                         Get-UnattendSection 'specialize' 'Microsoft-Windows-TCPIP' $unattend | ForEach-Object { $_.Interfaces.Interface.Routes.Route.NextHopAddress = $vmUnattendConfig[$vm.Name].IPGateway };
-                    }else {
-                        (Get-UnattendSection 'specialize' 'Microsoft-Windows-TCPIP' $unattend | ForEach-Object { $_.Interfaces.Interface.Routes} ).RemoveAll()
+                    }
+                    else {
+                        (Get-UnattendSection 'specialize' 'Microsoft-Windows-TCPIP' $unattend | ForEach-Object { $_.Interfaces.Interface.Routes } ).RemoveAll()
                     }
                     
                     Get-UnattendSection 'specialize' 'Microsoft-Windows-DNS-Client' $unattend | ForEach-Object { $_.Interfaces.Interface.DNSServerSearchOrder.IpAddress.'#text' = $vmUnattendConfig[$vm.Name].DNSIP };
@@ -485,9 +498,13 @@ foreach ($postInstallVM in $postInstallVMs) {
 
     Wait-ForPSDirect $vmName $UserCredential # wait till VM is up and responsive
     
-    #run vmCopySteps
+    #region run vmCopySteps
     if ($postInstallVM.value.vmCopySteps.count -gt 0) {
-        Enable-VMIntegrationService -Name 'Guest Service Interface' -VMName $vmName #required for file copy
+        $wasenabled = (Get-VMIntegrationService -VMName $vmName -Name 'Guest Service Interface').Enabled
+        if ($wasenabled) {}
+        else {
+            Enable-VMIntegrationService -Name 'Guest Service Interface' -VMName $vmName #required for file copy
+        }
 
         foreach ($item in $($postInstallVM.value.vmCopySteps)) {
             $invokeParameters = @{
@@ -501,10 +518,15 @@ foreach ($postInstallVM in $postInstallVMs) {
             Copy-VMFile @invokeParameters -Verbose
             "...end of copy: '{0}'" -f $item.stepHeadline
         }
-        Disable-VMIntegrationService -Name 'Guest Service Interface' -VMName $vmName #to get back to the defaults
-    }
 
-    #run vmPostInstallSteps
+        if ($wasenabled) {}
+        else {   
+            Disable-VMIntegrationService -Name 'Guest Service Interface' -VMName $vmName #to get back to the defaults
+        }
+    }
+    #endregion
+
+    #region run vmPostInstallSteps
     foreach ($item in $($postInstallVM.value.vmPostInstallSteps)) {
         if (!([string]::IsNullOrWhiteSpace($item.scriptArgumentList))) {
             $invokeParameters = @{
@@ -542,6 +564,7 @@ foreach ($postInstallVM in $postInstallVMs) {
         "...end of action: '{0}'" -f $item.stepHeadline
     }
     "======End: {0}======`n" -f $vmName 
+    #endregion
 }
 #endregion
 

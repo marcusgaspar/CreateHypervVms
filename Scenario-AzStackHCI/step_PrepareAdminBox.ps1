@@ -67,7 +67,7 @@ Start-Process -FilePath net -ArgumentList "net start remoteaccess" -Wait -Verbos
     # Download the installer
     try {
         "1st try to download WAC installer"
-        Invoke-WebRequest -Uri $WACInstallerUrl -OutFile $InstallerPath
+        [System.Net.WebClient]::new().DownloadFile($WACInstallerUrl, $InstallerPath)
     }
     catch {
         "2nd try to download WAC installer"

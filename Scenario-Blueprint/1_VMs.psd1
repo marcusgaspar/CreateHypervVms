@@ -15,7 +15,15 @@
         vmDataDisks           = @(                                      # (optional) Data disks of the VM
             @{"DiskName" = "dd-1.vhdx"; "DiskSize" = 30GB }
             @{"DiskName" = "dd-2.vhdx"; "DiskSize" = 30GB }
-        )                                     
+        )
+        VMIntegrationService  = @{                                     # lets you set the integration services behaviour for the VM 
+            "Guest Service Interface" = $false                         # these are the defaults if you don't intent to change you can remove this section see example below
+            "Heartbeat"               = $true
+            "Key-Value Pair Exchange" = $true
+            "Shutdown"                = $true
+            "Time Synchronization"    = $true
+            "VSS"                     = $true
+        }                                                                   
     }
     'VM1' = @{
         vmName                = "Test-N2"
