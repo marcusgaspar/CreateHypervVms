@@ -38,7 +38,10 @@
             @{"DiskName" = "dd-6.vhdx"; "DiskSize" = 50GB }
             @{"DiskName" = "dd-7.vhdx"; "DiskSize" = 50GB }
             @{"DiskName" = "dd-8.vhdx"; "DiskSize" = 50GB }
-        )                                     
+        )
+        VMIntegrationService           = @{
+            "Time Synchronization" = $false 
+        }                                                                   # Don't change: Time sync is disabled for HCI nodes     key names could be  "Heartbeat","Key-Value Pair Exchange","Shutdown","Time Synchronization","VSS","Guest Service Interface"
     }
     'VM2' = @{
         vmName                         = "00-HCI-2"
@@ -65,6 +68,9 @@
             @{"DiskName" = "dd-6.vhdx"; "DiskSize" = 50GB }
             @{"DiskName" = "dd-7.vhdx"; "DiskSize" = 50GB }
             @{"DiskName" = "dd-8.vhdx"; "DiskSize" = 50GB }
-        )  
+        )
+        VMIntegrationService           = @{
+            "Time Synchronization" = $false 
+        }    
     }
 }
