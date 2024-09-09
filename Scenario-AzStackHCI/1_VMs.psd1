@@ -22,6 +22,7 @@
         vmGeneration                   = 2                                      # Gen 2 VM - you should not use Gen 1 VMs anymore
         vmProcCount                    = 6                                      # ??? Number of vCPUs
         vmAutomaticStopAction          = "ShutDown"                             # What to do when the host is shut down - saves disk space.
+        enableVMTPM                    = $true                                  # This will enable a virtual TPM to be available inside the VM (default = $false)
         vmNics                         = @{                                     # NICs of the VM  - make sure your hyper-v switch names are correct!
             "aMGMT" = @{"Switch" = "Internal"; "VLANID" = "" ; "MacAddressSpoofing" = $true }   # Don't change:    # the first NIC in alphabetical order will receive IP address as per 2_UnattendSettings.psd1
             "Comp1" = @{"Switch" = "Internal"; "VLANID" = "" ; "MacAddressSpoofing" = $true }   # Don't change:    #Get-VMNetworkAdapter -VMName $VM | Set-VMNetworkAdapter -MacAddressSpoofing On
@@ -52,6 +53,7 @@
         vmGeneration                   = 2
         vmProcCount                    = 6                                  # ???
         vmAutomaticStopAction          = "ShutDown"
+        enableVMTPM                    = $true                              
         vmNics                         = @{
             "aMGMT" = @{"Switch" = "Internal"; "VLANID" = "" ; "MacAddressSpoofing" = $true }          # the first NIC in alphabetical order will receive IP address as per 2_UnattendSettings.psd1
             "Comp1" = @{"Switch" = "Internal"; "VLANID" = "" ; "MacAddressSpoofing" = $true }         #Get-VMNetworkAdapter -VMName $VM | Set-VMNetworkAdapter -MacAddressSpoofing On} 

@@ -66,7 +66,7 @@ Install-Module Az.Resources -RequiredVersion 6.12.0
 Install-Module Az.ConnectedMachine -RequiredVersion 0.5.2 
 
 #Install Arc registration script from PSGallery 
-Install-Module AzSHCI.ARCInstaller -RequiredVersion 0.2.2616.70 # avoiding registration errors in nested environments
+Install-Module AzSHCI.ARCInstaller #support for vTPM was added
 
 
 ``` 
