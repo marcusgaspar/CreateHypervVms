@@ -308,12 +308,14 @@ foreach ($vm in $($vmConfig.GetEnumerator() | Sort-Object Name)) {
 
 
     #region enable virtual TPM if enableVMTPM = $true (1_VMs.psd1)
-    #as per https://learn.microsoft.com/en-us/azure-stack/hci/deploy/deployment-virtual
+
     if ($vm.Value.enableVMTPM) {
         "...enabling virtual TPM ..."
-        $owner = Get-HgsGuardian UntrustedGuardian
-        $kp = New-HgsKeyProtector -Owner $owner -AllowUntrustedRoot
-        Set-VMKeyProtector -VMName $vmName -KeyProtector $kp.RawData
+        #as per https://learn.microsoft.com/en-us/azure-stack/hci/deploy/deployment-virtual
+        #$owner = Get-HgsGuardian UntrustedGuardian
+        #$kp = New-HgsKeyProtector -Owner $owner -AllowUntrustedRoot
+        #Set-VMKeyProtector -VMName $vmName -KeyProtector $kp.RawData
+        Set-VMKeyProtector -VMName $vmName -NewLocalKeyProtector    #appears to require less
         Enable-VmTpm -VMName $vmName
     }
     #endregion
