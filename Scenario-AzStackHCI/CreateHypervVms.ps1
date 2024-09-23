@@ -306,6 +306,20 @@ foreach ($vm in $($vmConfig.GetEnumerator() | Sort-Object Name)) {
     New-Item -Path $vmDirectory -ItemType Directory -ErrorAction SilentlyContinue
     New-VM -Name $vmName -MemoryStartupBytes $vmMemory -NoVHD  -Path $vmDirectory -Generation $vmGeneration | Set-VM -ProcessorCount $vmProcCount  -AutomaticStopAction $vmAutomaticStopAction 
 
+
+    #region enable virtual TPM if enableVMTPM = $true (1_VMs.psd1)
+
+    if ($vm.Value.enableVMTPM) {
+        "...enabling virtual TPM ..."
+        #as per https://learn.microsoft.com/en-us/azure-stack/hci/deploy/deployment-virtual
+        #$owner = Get-HgsGuardian UntrustedGuardian
+        #$kp = New-HgsKeyProtector -Owner $owner -AllowUntrustedRoot
+        #Set-VMKeyProtector -VMName $vmName -KeyProtector $kp.RawData
+        Set-VMKeyProtector -VMName $vmName -NewLocalKeyProtector    #appears to require less
+        Enable-VmTpm -VMName $vmName
+    }
+    #endregion
+
     #region allow for nested virtualization
     if ($vm.Value.ExposeVirtualizationExtensions) {
         "...enabling nested virtualization..."

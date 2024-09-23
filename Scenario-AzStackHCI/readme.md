@@ -50,29 +50,8 @@ $deployUserPwd = "........"
 
 **[do this on every HCI node]**
 - can you ping e.g. ibm.com? -> then your nat router (on DC) works
-- install the HCI prerequisites using e.g.
-```PowerShell
-$ConfirmPreference = "HIGH"
-Write-Output "Installing PackageManagement"
-Install-Package -Name PackageManagement -MinimumVersion 1.4.8 -Force -Confirm:$false
-Write-Output "Installing PowershellGet"
-Install-Package -Name PowershellGet -Force -Verbose
-
-Set-PSRepository -Name PSGallery -InstallationPolicy Trusted
-
-#Install required PowerShell modules in your node for registration
-Install-Module Az.Accounts -RequiredVersion 2.13.2 
-Install-Module Az.Resources -RequiredVersion 6.12.0 
-Install-Module Az.ConnectedMachine -RequiredVersion 0.5.2 
-
-#Install Arc registration script from PSGallery 
-Install-Module AzSHCI.ARCInstaller -RequiredVersion 0.2.2616.70 # avoiding registration errors in nested environments
-
-
-``` 
-
-- Disable IPv6 on all of the adapters if it was not configured by you. e.g.  
-**[do this on every HCI node]**
+- [Only install the HCI prerequisites when running older ISO files (i.e. older than 2408)](https://learn.microsoft.com/en-us/azure-stack/hci/deploy/deployment-arc-register-server-permissions?tabs=powershell)
+- Disable IPv6 on all of the adapters if it was not configured by you. e.g.:  
 ```PowerShell
 Disable-NetAdapterBinding -InterfaceAlias * -ComponentID ms_tcpip6
   
