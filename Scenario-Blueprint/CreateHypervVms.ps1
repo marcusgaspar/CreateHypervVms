@@ -313,6 +313,20 @@ foreach ($vm in $($vmConfig.GetEnumerator() | Sort-Object Name)) {
     New-Item -Path $vmDirectory -ItemType Directory -ErrorAction SilentlyContinue
     New-VM -Name $vmName -MemoryStartupBytes $vmMemory -NoVHD  -Path $vmDirectory -Generation $vmGeneration | Set-VM -ProcessorCount $vmProcCount  -AutomaticStopAction $vmAutomaticStopAction 
 
+
+    #region enable virtual TPM if enableVMTPM = $true (1_VMs.psd1)
+
+    if ($vm.Value.enableVMTPM) {
+        "...enabling virtual TPM ..."
+        #as per https://learn.microsoft.com/en-us/azure-stack/hci/deploy/deployment-virtual
+        #$owner = Get-HgsGuardian UntrustedGuardian
+        #$kp = New-HgsKeyProtector -Owner $owner -AllowUntrustedRoot
+        #Set-VMKeyProtector -VMName $vmName -KeyProtector $kp.RawData
+        Set-VMKeyProtector -VMName $vmName -NewLocalKeyProtector    #appears to require less
+        Enable-VmTpm -VMName $vmName
+    }
+    #endregion
+
     #region allow for nested virtualization
     if ($vm.Value.ExposeVirtualizationExtensions) {
         "...enabling nested virtualization..."
@@ -352,14 +366,16 @@ foreach ($vm in $($vmConfig.GetEnumerator() | Sort-Object Name)) {
         }
         Start-Sleep -Milliseconds 500
 
-        if ($VMNic.Value.VLANID -ne '') {
-            $internalVLANID = $VMNic.Value.VLANID.Replace("xx", $("{0:00}" -f $i))    #e.g. 1101,1102,...
-            #"NIC: {0}   Switch: {1}   VLANID: {2}" -f $VMNic.Name, $VMNic.Value.Switch, $internalVLANID
-            Set-VMNetworkAdapterVlan -VMName $vmName -VMNetworkAdapterName $($VMNic.Name) -Access -VlanId $internalVLANID
+        #if access mode vland id is set
+        if (![system.string]::IsNullOrWhiteSpace($VMNic.Value.VLANID)) {
+            $vlanId = $VMNic.Value.VLANID   #.Replace("xx", $("{0:00}" -f $i))    #e.g. 1101,1102,...
+            #"NIC: {0}   Switch: {1}   VLANID: {2}" -f $VMNic.Name, $VMNic.Value.Switch, $vlanId
+            Set-VMNetworkAdapterVlan -VMName $vmName -VMNetworkAdapterName $($VMNic.Name) -Access -VlanId $vlanId -Verbose
         }
         else {
             #"NIC: {0}   Switch: {1}" -f $VMNic.Name, $VMNic.Value.Switch
         }
+
 
         if ($VMNic.Value.MacAddressSpoofing) {
             Set-VMNetworkAdapter -VMName $VmName -Name $($VMNic.Name) -MacAddressSpoofing On
