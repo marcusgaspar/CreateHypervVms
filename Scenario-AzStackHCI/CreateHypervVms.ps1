@@ -5,17 +5,24 @@
 ##########################################################
 
 # 1. Create a golden image and adjust these variables
-$GoldenImage = "c:\.....\W2k22.vhdx"       # ??? path to a sysprepped virtual hard disk (UEFI i.e. Gen2 VMs) to be used as a golden image
-$vmDirectoryPrefix = "c:\.....your VM storage....\AzStack"   # ??? generic path where the VMs will be created - each VM gets its subfolder
+$GoldenImage = "C:\AzureLocal\Images\win_2k22_en-us-created.vhdx"       # ??? path to a sysprepped virtual hard disk (UEFI i.e. Gen2 VMs) to be used as a golden image
+$vmDirectoryPrefix = "C:\AzureLocal\vms"   # ??? generic path where the VMs will be created - each VM gets its subfolder
 
 # 2. Provide a complex generic local admin pwd
-$adminPassword = '....A complex PWD please.......'   # ??? use single quotes to avoid PS special chars interpretation problems (e.g. $ in pwd problems)
+$adminPassword = '<add your complex password'   # ??? use single quotes to avoid PS special chars interpretation problems (e.g. $ in pwd problems). . Password complexity requirements (12+ characters long, a lowercase and uppercase character, a numeral, and a special character)
 
 # 3. Navigate to the config files and adjust them to your needs
 $currentPath = (Get-Location).Path
-$vmConfig = Import-PowerShellDataFile $("$currentPath\1_VMs.psd1")
-$vmUnattendConfig = Import-PowerShellDataFile $("$currentPath\2_UnattendSettings.psd1")
-$vmPostInstallConfig = Import-PowerShellDataFile $("$currentPath\3_PostInstallScripts.psd1")
+
+# Config File Names
+#gaspar
+$1_VM_FileName=$currentPath+"\1_VMs.psd1"
+$2_UnattendSettings_FileName=$currentPath+"\2_UnattendSettings.psd1"
+$3_PostInstallScripts_FileName=$currentPath+"\3_PostInstallScripts.psd1"
+
+$vmConfig = Import-PowerShellDataFile $("$1_VM_FileName")
+$vmUnattendConfig = Import-PowerShellDataFile $("$2_UnattendSettings_FileName")
+$vmPostInstallConfig = Import-PowerShellDataFile $("$3_PostInstallScripts_FileName")
 
 # Do not change anything below this line unless you know what you are doing
 #   |
@@ -24,7 +31,10 @@ $vmPostInstallConfig = Import-PowerShellDataFile $("$currentPath\3_PostInstallSc
 
 #region Test Settings
 $oldErrorActionPreference = $ErrorActionPreference
-$ErrorActionPreference = 'SilentlyContinue'
+#gaspar
+#$ErrorActionPreference = 'SilentlyContinue'
+$ErrorActionPreference = 'Continue'
+
 $testPaths = @(
     @{
         path         = $($GoldenImage)
@@ -32,19 +42,19 @@ $testPaths = @(
         abortscript  = $false
     }
     @{
-        path         = $("$currentPath\1_VMs.psd1")
-        errormessage = "Cannot find vmconfig in $("$currentPath\1_VMs.psd1")"
+        path         = $("$1_VM_FileName")
+        errormessage = "Cannot find vmconfig in $("$1_VM_FileName")"
         abortscript  = $true
     }
     @{
-        path         = $("$currentPath\2_UnattendSettings.psd1")
-        errormessage = "Cannot find vmconfig in $("$currentPath\2_UnattendSettings.psd1")"
+        path         = $("$2_UnattendSettings_FileName")
+        errormessage = "Cannot find vmconfig in $("$2_UnattendSettings_FileName")"
         abortscript  = $true
     }
     @{
-        path         = $("$currentPath\3_PostInstallScripts.psd1")
-        errormessage = "Cannot find post install script options at $currentPath\3_PostInstallScripts.psd1"
-        abortscript  = $false
+        path         = $("$3_PostInstallScripts_FileName")
+        errormessage = "Cannot find post install script options at $("$3_PostInstallScripts_FileName")"
+        abortscript  = $true
     }
 )
 
@@ -254,10 +264,14 @@ function Clear-UnDefinedUnattendSections {
 function Wait-ForPSDirect([string]$VMName, $cred) {
    
     #make sure VM is up and running
-    while ((Get-VM -Name $VMName | Select-Object PrimaryOperationalStatus).tolower() -ne 'ok') { Start-Sleep -Seconds 5 }
-
+    #gaspar
+    #while ((Get-VM -Name $VMName | Select-Object PrimaryOperationalStatus).tolower() -ne 'ok') { Start-Sleep -Seconds 5 }
+    while ((Get-VM -Name $VMName).PrimaryOperationalStatus.ToString().ToLower() -ne 'ok') { Start-Sleep -Seconds 5 }
+    
     #make sure integration component heartbeat is responsive
-    while ((Get-VMIntegrationService $VMName -Name 'Heartbeat' -Credential $cred).PrimaryStatusDescription.tolower() -ne 'OK') { Start-Sleep -Seconds 5 }
+    #gaspar
+    #while ((Get-VMIntegrationService $VMName -Name 'Heartbeat' -Credential $cred).PrimaryStatusDescription.tolower() -ne 'OK') { Start-Sleep -Seconds 5 }
+    while ((Get-VMIntegrationService -VMName $vmName -Name 'Heartbeat').PrimaryStatusDescription.ToString().ToLower() -ne 'ok') { Start-Sleep -Seconds 5 }
 
     #make sure VM can take remote commands
     while ((Invoke-Command -VMName $VMName -Credential $cred { 'Test' } -ea SilentlyContinue) -ne 'Test') { Start-Sleep -Seconds 5 }
@@ -536,6 +550,7 @@ foreach ($postInstallVM in $postInstallVMs) {
     #endregion
 
     #region run vmPostInstallSteps
+    $invokeParameters = @{}
     foreach ($item in $($postInstallVM.value.vmPostInstallSteps)) {
         if (!([string]::IsNullOrWhiteSpace($item.scriptArgumentList))) {
             $invokeParameters = @{
@@ -554,7 +569,13 @@ foreach ($postInstallVM in $postInstallVMs) {
         }
 
         "...running action: '{0}'" -f $item.stepHeadline
-        Invoke-Command @invokeParameters 
+        
+        #Invoke-Command @invokeParameters 
+        "...invokeParameters.VMName: '{0}'" -f $invokeParameters.VMName
+        "...invokeParameters.Credential: '{0}'" -f $invokeParameters.Credential
+        "...invokeParameters.ArgumentList: '{0}'" -f $invokeParameters.ArgumentList
+        "...invokeParameters.FilePath: '{0}'" -f $invokeParameters.FilePath
+        Invoke-Command -VMName $invokeParameters.VMName -Credential $invokeParameters.Credential -ArgumentList $invokeParameters.ArgumentList -FilePath $invokeParameters.FilePath -Verbose 
 
         #restart required?
         if ($item.requiresRestart -eq $true) { 
@@ -562,6 +583,14 @@ foreach ($postInstallVM in $postInstallVMs) {
             Stop-VM $vmName
             do {
                 Start-Sleep 3
+                "...waiting..." -f $vmName
+                #gaspar
+                "...cleaning any scheduled shutdown"
+                "...sending a shutdown /a $vmName"
+                Invoke-Command -VMName $vmName -Credential $UserCredential { 'shutdown /a' }
+                Start-Sleep 3
+                "... trying to stop again $vmName"
+                Stop-VM $vmName
                 "...waiting..." -f $vmName
             }
             until ((Get-VM $vmName).State -eq 'Off')
@@ -601,6 +630,13 @@ foreach ($vm in $($vmConfig.GetEnumerator() | Sort-Object Name)) {
         Stop-VM $vmName
         do {
             Start-Sleep 3
+            #gaspar
+            "...cleaning any scheduled shutdown"
+            "...sending a shutdown /a $vmName"
+            Invoke-Command -VMName $vmName -Credential $UserCredential { 'shutdown /a' }
+            Start-Sleep 3
+            "... trying to stop again $vmName"
+            Stop-VM $vmName
             "...wait..." -f $vmName
         }
         until ((Get-VM $vmName).State -eq 'Off')

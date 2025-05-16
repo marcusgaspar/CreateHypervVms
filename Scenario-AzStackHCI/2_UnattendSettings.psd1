@@ -4,8 +4,8 @@
         ComputerName  = '00-DC-1'                       # computer name in the OS
         Organization  = 'myhci'                         # organization name in the OS
         Owner         = 'myhci'                         
-        Timezone      = 'W. Europe Standard Time'       # ??? Timezone in OS you can do (PShell) to find yours  "get-timezone -ListAvailable | out-gridview -OutputMode Single | Select-Object ID"
-        InputLocale   = 'de-DE'                         # ??? Keyboard layout in OS
+        Timezone      = 'E. South America Standard Time'       # ??? Timezone in OS you can do (PShell) to find yours  "get-timezone -ListAvailable | out-gridview -OutputMode Single | Select-Object ID"
+        InputLocale   = 'en-US'                         # ??? Keyboard layout in OS
         SystemLocale  = 'en-US'                         # System locale in OS (sorting, etc.)
         UserLocale    = 'en-US'                         # User locale in OS (date, time, etc.)
         IPAddress     = "192.168.0.1"                   # (optional) static IP address to be assigned to the first NIC (alphabetical order in 1_VMs.psd1) - if not set, the IP address will be assigned by DHCP
@@ -17,8 +17,8 @@
         ComputerName = '00-HCI-1'
         Organization = 'myhci'
         Owner        = 'myhci'
-        Timezone     = 'W. Europe Standard Time'
-        InputLocale  = 'de-DE'
+        Timezone     = 'E. South America Standard Time'
+        InputLocale  = 'en-US'
         SystemLocale = 'en-US'
         UserLocale   = 'en-US'
         IPAddress     = "192.168.0.2"                 # (optional) static IP address to be assigned to the first NIC (alphabetical order in 1_VMs.psd1) - if not set, the IP address will be assigned by DHCP
@@ -30,8 +30,8 @@
         ComputerName = '00-HCI-2'
         Organization = 'myhci'
         Owner        = 'myhci'
-        Timezone     = 'W. Europe Standard Time'
-        InputLocale  = 'de-DE'
+        Timezone     = 'E. South America Standard Time'
+        InputLocale  = 'en-US'
         SystemLocale = 'en-US'
         UserLocale   = 'en-US'
         IPAddress     = "192.168.0.3"                 
